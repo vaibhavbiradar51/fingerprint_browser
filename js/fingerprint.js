@@ -3,7 +3,7 @@ $(document).ready(function() {
   setTimeout(function() {
     // Set browser fingerprint attributes
     fingerprint = {
-      fingerprintID: null,
+      
       
       vendor: navigator.vendor,
       
@@ -33,8 +33,8 @@ $(document).ready(function() {
       flash: onOff(isFlashEnabled()),
       mimeTypes: getMimeTypes(),
       lastVisit: lastVisit(),
-      thisVisit: new Date().toLocaleString()
-      
+      thisVisit: new Date().toLocaleString(),
+      fingerprintID: null
     };
 
     fingerprint.fingerprintID = getFingerprintMD5();
