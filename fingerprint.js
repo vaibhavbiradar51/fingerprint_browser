@@ -3,7 +3,7 @@ $(document).ready(function() {
   setTimeout(function() {
     // Set browser fingerprint attributes
     fingerprint = {
-      fingerprintID: null,
+      
       browser: navigator.appName,
       vendor: navigator.vendor,
       codeName: navigator.appCodeName,
