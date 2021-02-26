@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Demonstration of browser fingerprint and social media tracking">
+    <title>Browser Tracking</title>
+    <link rel="icon" href="icons/icon.ico">
+    <link rel="stylesheet" href="lib/css/leaflet.css">
+    <link rel="stylesheet" href="lib/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body id="body" class="bg-dark text-light">
+    <div class="container">
+      <header class="m-5">
+        <h1>Browser Fingerprint</h1>
+
+      </header>
+
+      <div id="loading">
+        <img src="icons/loading.gif">
+      </div>
+
+      <div id="fadeIn">
+        <section id="fingerprintSection">
+          <h2>Got all the information</h2>
+          <div class="didLoad d-none">
+            <table id="fingerprint" class="table table-sm table-striped border"></table>
+
+          </div>
+
+          <p class="noLoad">Couldn't get browser fingerprint, that's good!</p>
+        </section><!-- end fingerprintSection -->
+
+        <section id="ipSection">
+          <h2>IP Address Details</h2>
+          <div class="didLoad d-none">
+            <div id="map" class="mb-4"></div>
+
+            
+            <table id="ip" class="table table-sm table-striped border"></table>
+          </div>
+
+          <p class="noLoad">Couldn't get IP address, that's good!</p>
+        </section><!-- end ipSection -->
+
+        <section id="socialSection">
+          <h2>Sites You're Logged Into</h2>
+          <div class="didLoad d-none">
+            <div id="socialRow" class="row justify-content-center"></div>
+            <p>
+              <i>Logged in</i> meaning: if you go to the site you'll already be logged in<br>
+              Click on any site and you'll see you're already logged in
+            </p>
+
+
+            <button id="socialList" class="btn btn-sm" data-toggle="popover" data-trigger="focus" data-html="true">
+              sites to check</button>
+          </div>
+
+          <p class="noLoad">Your browser isn't saving cookies or is blocking the tracking attempts, that's good!</p>
+        </section><!-- end socialSection -->
+
+
+
+      </div><!-- end fadeIn -->
+    </div><!-- end container -->
+    <script src="lib/js/leaflet.js"></script>
+    <script src="lib/js/jquery.min.js"></script>
+    <script src="lib/js/popper.min.js"></script>
+    <script src="lib/js/bootstrap.min.js"></script>
+    <script src="lib/js/yamd5.min.js"></script>
+
+    <script src="js/fingerprint.js"></script>
+    <script src="js/ip.js"></script>
+    <script src="js/socialmedia.js"></script>
+
+    <script>
+
+      $(document).ready(function() {
+        $('#year').text((new Date).getFullYear());
+
+        // Popover
+        // Populate popover with list of social sites getting checked
+        $('#socialList')[0].setAttribute('data-content', getSocialListRow());
+        // And prevent scroll to top on click
+        $('[data-toggle="popover"]')
+          .popover({
+            placement: 'top'
+          })
+          .click(function(e) {
+            e.preventDefault();
+        });
+
+        // Batch add attributes to elements
+        setAttributes($('section'),
+                      ['class'],
+                      ['mb-5 p-4 shadow rounded bg-light text-dark']);
+        setAttributes($('h2'),
+                      ['class'],
+                      ['mb-4']);
+        setAttributes($('a'),
+                      ['rel',        'target'],
+                      ['noreferrer', '_blank']);
+
+        // Shrink margin from last section
+        $('section')[$('section').length - 1].classList.remove('mb-5');
+        $('section')[$('section').length - 1].classList.add('mb-2');
+
+        // Add and style links referencing table rows
+        setTimeout(function() {
+          tableLink(['lastVisit', 'canvas', 'fingerprintID']);
+        }, 500); // end timeout
+
+        // After page is loaded, hide loading.gif and show page
+        setTimeout(function() {
+          $('#loading').fadeOut('slow', function() {
+            $('#fadeIn')[0].style.display = 'none';
+            $('#fadeIn')[0].style.opacity = '1';
+            $('#fadeIn').fadeIn('fast');
+          });
+        }, 100);
+      }); // End Document Ready
+
+      // Set attribute of array of elements
+      function setAttributes(elementArray, attributeArray, valueArray) {
+        for (var elem of elementArray) {
+          for (var i = 0; i < attributeArray.length; i++) {
+            elem.setAttribute(attributeArray[i], valueArray[i]);
+          }
+        }
+      }
+
+      // Add links to table rows mentioned in <p>s
+      // Remove rel and target attribtes set by setAttributes() above
+      // @param ids = array of id matching inline link and fingerprint key
+      function tableLink(ids) {
+        for (id of ids) {
+          $('td:contains(' + id + ')')[0].setAttribute   ('id', id);
+          $('a:contains('  + id + ')')[0].classList.add  ('text-secondary');
+          $('a:contains('  + id + ')')[0].removeAttribute('rel');
+          $('a:contains('  + id + ')')[0].removeAttribute('target');
+        }
+
+      }
+
+      // Add content to table
+      function buildTable(table, obj) {
+        var row, value;
+
+        // Make 2 cols of (key, value)
+        for (var key in obj) {
+          // Log all results to console
+          console.log(`${key}: ${obj[key]}`);
+          // Only populate table if has value
+          if (obj[key] != '' && obj[key] != ',' && obj[key]!= null) {
+            row = table.insertRow(-1);
+            keyCell = row.insertCell(0);
+            valCell = row.insertCell(1);
+            keyCell.innerHTML = key;
+            valCell.innerHTML = cleanKey(obj[key]);
+          }
+        }
+      }
+
+      function cleanKey(key) {
+        if (Array.isArray(key)) {
+          return arrayToString(key);
+        } else if (
+          (typeof key === 'string') &&
+          (key.indexOf(',') >= -1) && // has commas
+          (key.indexOf(', ') >= -1)
+          ) {
+            return commaSpace(key);
+          }
+        else {
+          return key;
+        }
+      }
+
+      // Makes comma separated string of array objects
+      function arrayToString(array) {
+        var str = '';
+        for (value of array) {
+          if (value != null) {
+            str += value;
+            if (value != array[array.length - 1]) str += ', ';
+          }
+        }
+      }
+
+      // Turn string ',' into ', ' for better table wrapping on mobile
+      function commaSpace(uglyString) {
+        return uglyString.replace(/,/g, ', ');
+      }
+
+      // Show section if it successfully loads
+      function showSection(section) {
+        // section.style.display = 'block';
+      }
+    </script>
+  </body>
+</html>
